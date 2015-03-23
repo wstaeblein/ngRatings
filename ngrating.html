@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html ng-app="ngRatingApp">
+    <head>
+        <title></title>
+        <style>
+            ul.rating {
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 7px;
+                background-color: transparent;
+            }
+
+            ul.rating li.normalstar {
+                width: 20px;
+                height: 20px;
+                display: inline-block;
+                padding-right: 5px;
+                background: url(starpb.png) no-repeat center center;
+                cursor: pointer;
+				overflow: hidden;
+            }
+
+			.rating li.zerostar {
+                width: 20px;
+                height: 20px;
+				display: inline-block;
+				cursor: pointer;
+			}
+				.rating li.zerostar:hover {
+					background: url(close.png) no-repeat center center;
+				}
+            ul.rating li.normalstar.ratingSel {
+                background: url(star.png) no-repeat center center;
+            }
+        </style>
+    </head>
+
+    <body ng-controller="testeRating">
+
+        <ratings size="5" rating="rated" readonly="readonly" change2zero="true"></ratings>
+
+        <br />
+        <br />
+
+        <ratings size="7" rating="rated2" readonly="readonly2"></ratings>
+        
+        <p>Rating Escolhido: {{ rated }}</p>
+        <p>Rating Escolhido: {{ rated2 }}</p>
+
+        <p><a href="javascript: void(0)" ng-click="mudaRating()">Muda</a></p>
+        <p><a href="javascript: void(0)" ng-click="makeRO()">Ativa/Desativa</a></p>
+
+
+
+        <script src="js/jquery.js" type="text/javascript"></script>
+        <script src="js/angular.min.js" type="text/javascript"></script>
+        <script language="javascript">
+
+            /*
+                Sistema de Ranqueamento ngRating
+                ================================
+
+                Cria um sistema de rating baseado em símbolos que quando clicados determinam uma nota para algum quesito.
+
+                Campos:
+                    size..........: Descrição: Quantidade de símbolos a mostrar. 
+                                    Default: 5
+                                    Tipo: Numérico inteiro positivo
+
+                    rating........: Descrição: Indica qual variável no escopo pai contém o valor de quantos símbolos aparecerão ligados. 
+                                    Default: Estabelecido pelo valor inicial do campo no escopo pai
+                                    Tipo: string (nome de variável)
+
+                    readonly......: Descrição: Indica qual variável no escopo pai contém o valor que determina se o usuário pode interagir com esta diretiva. 
+                                    Default: Estabelecido pelo valor inicial do campo no escopo pai
+                                    Tipo: Booleano
+
+                    change2zero...: Descrição: Indica se um item a mais aparecerá na frente dos símbolos permitindo que, quando clicado, o usuário escolha a opção 0 (zero)
+                                    Default: true
+                                    Tipo: Booleano
+            */
+
+
+            var app = angular.module('ngRatingApp', []);
+
+            // Controller principal
+            app.controller('testeRating', function($scope) {
+                $scope.rated = 3;
+                $scope.rated2 = 6;
+
+                $scope.readonly = false;
+                $scope.readonly2 = true;
+
+                $scope.mudaRating = function() {
+                    $scope.rated = 4;
+                }
+
+                $scope.makeRO = function() {
+                    $scope.readonly = !$scope.readonly;
+                }
+            });
+
+
+            // Diretiva
+            app.directive('ratings', function() {
+
+                var directive = {};
+                directive.restrict = 'E';
+                directive.template = '<ul class="rating"><li class="zerostar" ng-click="rateClick(-1)" ng-show="change2zero" ng-style="visimap"></li><li ng-repeat="s in stars track by $index" class="normalstar" ng-class="{ ratingSel: s }" ng-click="rateClick($index)" ' + 'ng-mouseenter="rateIn($index)" ng-mouseleave="rateOut()"></li></ul>';
+                
+                directive.scope = {
+                    value: '=rating',
+                    readonly: '=readonly'
+                };
+
+                directive.compile = function() {
+
+                    return function($scope, element, attrs) {
+
+                        $scope.stars = [];
+                        $scope.size = attrs.size || 5;
+                        $scope.change2zero = attrs.change2zero || true;
+                        $scope.$watch('readonly', function() { $scope.visimap = { "visibility": !$scope.readonly ? "visible" : "hidden"}; });
+                        $scope.$watch('value', function() { update($scope.value - 1); });
+
+                        for (var i = 0; i < $scope.size; i++) {
+                            $scope.stars.push(i <= $scope.value - 1);
+                        };
+
+                        var update = function(ind) {
+                            for (var i = 0; i < $scope.size; i++) {
+                                $scope.stars[i] = (i <= ind);
+                            };                            
+                        };  
+
+                        $scope.rateClick = function(ind) {
+                            if (!$scope.readonly) { $scope.value = ind + 1; }
+                        };
+
+                        $scope.rateIn = function(ind) {
+                            if (!$scope.readonly) { update(ind); }
+                        };
+
+                        $scope.rateOut = function() {
+                            if (!$scope.readonly) { update($scope.value - 1); }
+                        };  
+                    };
+                }
+                return directive;
+            });
+        </script>
+    </body>
+</html>
